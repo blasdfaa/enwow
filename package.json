@@ -1,7 +1,7 @@
 {
   "name": "enwow",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "packageManager": "pnpm@10.25.0",
   "description": "Cross-platform environment variables loader and validator with Standard Schema support",
   "author": "blasdfaa",
