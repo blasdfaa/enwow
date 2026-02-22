@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { EnvValidationError, EnvValidator, createValidator } from '../src'
+import { createValidator, EnvValidationError, EnvValidator } from '../src'
 
-describe('EnvValidator', () => {
+describe('envValidator', () => {
   describe('basic validation', () => {
     it('should validate simple string schema', () => {
       const validator = new EnvValidator({

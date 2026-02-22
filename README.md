@@ -51,10 +51,10 @@ const env = await Env.create({
 })
 
 // Type-safe access
-env.get('PORT')     // number
-env.get('HOST')     // string
+env.get('PORT') // number
+env.get('HOST') // string
 env.get('DATABASE_URL') // string
-env.get('DEBUG')    // string | undefined
+env.get('DEBUG') // string | undefined
 ```
 
 ### With .env Files
@@ -158,7 +158,8 @@ try {
   const env = await Env.create({
     REQUIRED_VAR: z.string(),
   })
-} catch (error) {
+}
+catch (error) {
   if (error instanceof EnvValidationError) {
     console.log('Validation failed:')
     for (const issue of error.issues) {
@@ -185,8 +186,8 @@ const env = await Env.create({
 ### With ArkType
 
 ```typescript
-import { Env } from 'enwow'
 import { type } from 'arktype'
+import { Env } from 'enwow'
 
 const env = await Env.create({
   PORT: type('string.integer').pipe(Number),

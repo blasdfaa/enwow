@@ -108,7 +108,9 @@ MIIEpAIBAAKCAQEA0Z
       })
     })
 
+    // eslint-disable-next-line no-template-curly-in-string
     it('should interpolate ${VAR} syntax', () => {
+      // eslint-disable-next-line no-template-curly-in-string
       const parser = new EnvParser('BASE=/app\nPATH=${BASE}/path')
       const result = parser.parse()
 
