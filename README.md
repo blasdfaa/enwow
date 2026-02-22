@@ -12,6 +12,7 @@ Cross-platform environment variables loader and validator with [Standard Schema]
 - 🚀 **Cross-platform** - Works on Node.js, Bun, and Deno
 - ✅ **Standard Schema** - Compatible with Zod, Valibot, ArkType, and more
 - 📁 **.env file loading** - With proper file priority support
+- 🔌 **Pluggable sources** - Load env from JSON files, CLI commands, secret managers, or any custom source
 - 🔒 **Type-safe** - Full TypeScript support with type inference
 - 🪶 **Lightweight** - Minimal dependencies
 
@@ -118,6 +119,9 @@ interface EnvCreateOptions {
 
   // Custom environment variables source
   envSource?: Record<string, string | undefined>
+
+  // Custom source adapters (cannot be used with path argument)
+  sources?: EnvSourceAdapter[]
 }
 ```
 
@@ -168,6 +172,82 @@ catch (error) {
   }
 }
 ```
+
+## Sources
+
+By default, enwow loads environment variables from `.env` files and `process.env`. With source adapters, you can load from any source — JSON files, CLI commands, secret managers, or custom providers.
+
+```sh
+import { Env } from 'enwow'
+import { fromFiles, fromJSON, fromObject, fromProcessEnv } from 'enwow/adapters'
+```
+
+Sources are merged left-to-right: later sources override earlier ones.
+
+### Built-in Adapters
+
+| Adapter | Description |
+|---------|-------------|
+| `fromFiles({ directory, ...options })` | Load from `.env` files (same as the default behavior) |
+| `fromProcessEnv()` | Read from `process.env` (cross-platform) |
+| `fromJSON({ path })` | Read from a JSON file with flat key-value structure |
+| `fromObject({ env })` | Use a static object (useful for testing and defaults) |
+
+### Example: Multiple Sources
+
+```typescript
+import { Env } from 'enwow'
+import { fromFiles, fromJSON, fromProcessEnv } from 'enwow/adapters'
+import { z } from 'zod'
+
+const env = await Env.create({
+  PORT: z.string().transform(Number).default('3000'),
+  DATABASE_URL: z.string().url(),
+  API_SECRET: z.string(),
+}, {
+  sources: [
+    fromFiles({ directory: new URL('./', import.meta.url) }), // lowest priority
+    fromJSON({ path: './config/env.json' }),
+    fromProcessEnv(), // highest priority
+  ],
+})
+```
+
+### Custom Adapter
+
+Use `defineSourceAdapter` to create a type-safe adapter factory:
+
+```typescript
+import { defineSourceAdapter, fromFiles, fromProcessEnv } from 'enwow/adapters'
+
+interface VaultOptions {
+  url: string
+  token: string
+}
+
+const vault = defineSourceAdapter<VaultOptions>((opts) => {
+  return {
+    name: 'vault',
+    async load() {
+      const response = await fetch(opts.url, {
+        headers: { 'X-Vault-Token': opts.token },
+      })
+      const { data } = await response.json()
+      return data.data
+    },
+  }
+})
+
+const env = await Env.create(schema, {
+  sources: [
+    fromFiles({ directory: new URL('./', import.meta.url) }),
+    vault({ url: 'https://vault.example.com/v1/secret/data/myapp', token: process.env.VAULT_TOKEN! }),
+    fromProcessEnv(),
+  ],
+})
+```
+
+> **Note:** The `sources` option cannot be used together with the `path` argument in `Env.create(path, schema)`. Use `fromFiles()` adapter instead.
 
 ## Advanced Usage
 
