@@ -78,9 +78,6 @@ importers:
 
   .:
     dependencies:
-      '@standard-schema/spec':
-        specifier: catalog:inlined
-        version: 1.1.0
       pathe:
         specifier: catalog:prod
         version: 2.0.3
@@ -97,6 +94,9 @@ importers:
       '@antfu/utils':
         specifier: catalog:inlined
         version: 9.3.0
+      '@standard-schema/spec':
+        specifier: catalog:inlined
+        version: 1.1.0
       '@types/node':
         specifier: catalog:types
         version: 25.3.0

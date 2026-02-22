@@ -46,7 +46,6 @@
     "prepare": "simple-git-hooks"
   },
   "dependencies": {
-    "@standard-schema/spec": "catalog:inlined",
     "pathe": "catalog:prod",
     "std-env": "catalog:prod"
   },
