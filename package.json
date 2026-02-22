@@ -27,6 +27,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
+    "./adapters": "./dist/adapters/index.mjs",
     "./package.json": "./package.json"
   },
   "main": "./dist/index.mjs",

@@ -1,5 +1,6 @@
 import type { EnvCreateOptions, EnvSchema, InferEnv } from './types'
 import { env } from 'std-env'
+import { resolveAdapters } from './adapters/define'
 import { EnvLoader } from './loader'
 import { EnvParser } from './parser'
 import { EnvValidator } from './validator'
@@ -86,28 +87,42 @@ export class Env<T extends EnvSchema> {
       opts = (schemaOrOptions as EnvCreateOptions) ?? {}
     }
 
-    let envValues: Record<string, string | undefined> = {}
-
-    if (path) {
-      const loader = new EnvLoader(path, { nodeEnv: opts.nodeEnv })
-      const files = await loader.load()
-
-      // Parse files in reverse order (lowest priority first)
-      // This ensures higher priority files override lower priority ones
-      for (const file of files.reverse()) {
-        const parser = new EnvParser(file.contents, {
-          ignoreProcessEnv: opts.ignoreProcessEnv,
-          envSource: opts.envSource,
-        })
-        const parsed = parser.parse()
-        envValues = { ...envValues, ...parsed }
-      }
+    if (path && opts.sources) {
+      throw new TypeError(
+        'Cannot use \'sources\' option together with path argument. '
+        + 'Use fromFiles() adapter instead.',
+      )
     }
 
-    // Merge with process.env (highest priority)
-    if (!opts.ignoreProcessEnv) {
-      const processEnv = opts.envSource ?? getProcessEnv()
-      envValues = { ...envValues, ...processEnv }
+    let envValues: Record<string, string | undefined>
+
+    if (opts.sources) {
+      envValues = await resolveAdapters(opts.sources)
+    }
+    else {
+      envValues = {}
+
+      if (path) {
+        const loader = new EnvLoader(path, { nodeEnv: opts.nodeEnv })
+        const files = await loader.load()
+
+        // Parse files in reverse order (lowest priority first)
+        // This ensures higher priority files override lower priority ones
+        for (const file of files.reverse()) {
+          const parser = new EnvParser(file.contents, {
+            ignoreProcessEnv: opts.ignoreProcessEnv,
+            envSource: opts.envSource,
+          })
+          const parsed = parser.parse()
+          envValues = { ...envValues, ...parsed }
+        }
+      }
+
+      // Merge with process.env (highest priority)
+      if (!opts.ignoreProcessEnv) {
+        const processEnv = opts.envSource ?? getProcessEnv()
+        envValues = { ...envValues, ...processEnv }
+      }
     }
 
     const validator = new EnvValidator(schema)
