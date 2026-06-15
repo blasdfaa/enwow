@@ -1,8 +1,6 @@
 import type { EnvCreateOptions, EnvSchema, InferEnv } from './types'
-import { env } from 'std-env'
+import { buildDefaultSources } from './adapters/default'
 import { resolveAdapters } from './adapters/define'
-import { EnvLoader } from './loader'
-import { EnvParser } from './parser'
 import { EnvValidator } from './validator'
 
 /**
@@ -94,36 +92,8 @@ export class Env<T extends EnvSchema> {
       )
     }
 
-    let envValues: Record<string, string | undefined>
-
-    if (opts.sources) {
-      envValues = await resolveAdapters(opts.sources)
-    }
-    else {
-      envValues = {}
-
-      if (path) {
-        const loader = new EnvLoader(path, { nodeEnv: opts.nodeEnv })
-        const files = await loader.load()
-
-        // Parse files in reverse order (lowest priority first)
-        // This ensures higher priority files override lower priority ones
-        for (const file of files.reverse()) {
-          const parser = new EnvParser(file.contents, {
-            ignoreProcessEnv: opts.ignoreProcessEnv,
-            envSource: opts.envSource,
-          })
-          const parsed = parser.parse()
-          envValues = { ...envValues, ...parsed }
-        }
-      }
-
-      // Merge with process.env (highest priority)
-      if (!opts.ignoreProcessEnv) {
-        const processEnv = opts.envSource ?? getProcessEnv()
-        envValues = { ...envValues, ...processEnv }
-      }
-    }
+    const sources = opts.sources ?? buildDefaultSources(path, opts)
+    const envValues = await resolveAdapters(sources)
 
     const validator = new EnvValidator(schema)
     const validated = validator.validate(envValues)
@@ -153,11 +123,4 @@ export class Env<T extends EnvSchema> {
   has(key: keyof T): boolean {
     return this.values[key as keyof InferEnv<T>] !== undefined
   }
-}
-
-/**
- * Get the current process environment in a cross-platform way
- */
-function getProcessEnv(): Record<string, string | undefined> {
-  return env
 }

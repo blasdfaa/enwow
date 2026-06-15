@@ -3,7 +3,8 @@ import { join } from 'pathe'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { Env, EnvValidationError } from '../src'
-import { defineSourceAdapter, fromFiles, fromJSON, fromObject, fromProcessEnv, resolveAdapters } from '../src/adapters'
+import { defineSourceAdapter, fromObject, resolveAdapters } from '../src/adapters'
+import { fromFiles, fromJSON, fromProcessEnv } from '../src/adapters/node'
 
 describe('adapters', () => {
   const tempDir = join(process.cwd(), 'test-temp-adapters')

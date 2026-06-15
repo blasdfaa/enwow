@@ -177,27 +177,40 @@ catch (error) {
 
 By default, enwow loads environment variables from `.env` files and `process.env`. With source adapters, you can load from any source — JSON files, CLI commands, secret managers, or custom providers.
 
-```sh
-import { Env } from 'enwow'
-import { fromFiles, fromJSON, fromObject, fromProcessEnv } from 'enwow/adapters'
+```ts
+// Isomorphic adapters — safe in any runtime, including the browser
+import { fromImportMeta, fromObject } from 'enwow/adapters'
+
+// Node/Bun/Deno-only adapters — read from the filesystem or process.env
+import { fromFiles, fromJSON, fromProcessEnv } from 'enwow/adapters/node'
 ```
 
 Sources are merged left-to-right: later sources override earlier ones.
 
 ### Built-in Adapters
 
+Adapters are split into two entry points so browser bundles never pull in Node-only code.
+
+**`enwow/adapters`** — isomorphic, browser-safe:
+
+| Adapter | Description |
+|---------|-------------|
+| `fromImportMeta({ prefix?, env? })` | Read build-time variables from `import.meta.env` (Vite, esbuild); optionally filter by prefix and strip it |
+| `fromObject({ env })` | Use a static object (useful for testing and defaults) |
+
+**`enwow/adapters/node`** — Node/Bun/Deno only (filesystem & `process.env`):
+
 | Adapter | Description |
 |---------|-------------|
 | `fromFiles({ directory, ...options })` | Load from `.env` files (same as the default behavior) |
 | `fromProcessEnv()` | Read from `process.env` (cross-platform) |
 | `fromJSON({ path })` | Read from a JSON file with flat key-value structure |
-| `fromObject({ env })` | Use a static object (useful for testing and defaults) |
 
 ### Example: Multiple Sources
 
 ```typescript
 import { Env } from 'enwow'
-import { fromFiles, fromJSON, fromProcessEnv } from 'enwow/adapters'
+import { fromFiles, fromJSON, fromProcessEnv } from 'enwow/adapters/node'
 import { z } from 'zod'
 
 const env = await Env.create({
@@ -213,12 +226,47 @@ const env = await Env.create({
 })
 ```
 
+### In the Browser
+
+The core and the isomorphic adapters (`enwow/adapters`) run in the browser. Pass an explicit source — there is no implicit `process.env` in a browser, so the default `Env.create(schema)` path is Node-only by design.
+
+```typescript
+import { Env } from 'enwow'
+import { fromImportMeta } from 'enwow/adapters'
+import { z } from 'zod'
+
+// Vite/esbuild replace import.meta.env at build time.
+// import.meta.env.VITE_API_URL -> API_URL
+const env = await Env.create({
+  API_URL: z.string().url(),
+  MODE: z.string(),
+}, {
+  sources: [fromImportMeta({ prefix: 'VITE_' })],
+})
+```
+
+For runtime config injected into the page, combine with `fromObject`:
+
+```typescript
+import { fromImportMeta, fromObject } from 'enwow/adapters'
+
+const env = await Env.create(schema, {
+  sources: [
+    fromImportMeta({ prefix: 'VITE_' }),
+    fromObject({ env: window.__ENV__ }), // overrides build-time values
+  ],
+})
+```
+
+> **Note:** Importing `fromFiles`, `fromJSON`, or `fromProcessEnv` from `enwow/adapters/node` in a browser build will pull in Node APIs. Use only `enwow/adapters` on the client.
+
 ### Custom Adapter
 
 Use `defineSourceAdapter` to create a type-safe adapter factory:
 
 ```typescript
-import { defineSourceAdapter, fromFiles, fromProcessEnv } from 'enwow/adapters'
+import { defineSourceAdapter } from 'enwow/adapters'
+import { fromFiles, fromProcessEnv } from 'enwow/adapters/node'
 
 interface VaultOptions {
   url: string

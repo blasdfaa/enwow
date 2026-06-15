@@ -1,6 +1,4 @@
 export type { EnvSourceAdapter } from '../types'
 export { defineSourceAdapter, resolveAdapters, type SourceAdapterFactory } from './define'
-export { type FilesAdapterOptions, fromFiles } from './files'
-export { fromJSON, type JsonAdapterOptions } from './json'
+export { fromImportMeta, type ImportMetaAdapterOptions } from './import-meta'
 export { fromObject, type ObjectAdapterOptions } from './object'
-export { fromProcessEnv } from './process-env'

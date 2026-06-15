@@ -28,6 +28,7 @@
   "exports": {
     ".": "./dist/index.mjs",
     "./adapters": "./dist/adapters/index.mjs",
+    "./adapters/node": "./dist/adapters/node.mjs",
     "./package.json": "./package.json"
   },
   "main": "./dist/index.mjs",
